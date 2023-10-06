@@ -1,0 +1,10 @@
+langchain~=0.0.306
+python-dotenv~=1.0.0
+openai~=0.28.1
+streamlit~=1.27.2
+google-search-results==2.4.2
+pydantic~=2.4.2
+requests~=2.31.0
+beautifulsoup4~=4.12.2
+docx2txt==0.8
+google-api-python-client==2.102.0
