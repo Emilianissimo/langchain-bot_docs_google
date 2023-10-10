@@ -2,7 +2,7 @@ import os
 from typing import List
 from langchain.schema import Document
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.document_loaders import Docx2txtLoader, PyPDFLoader, TextLoader
+from langchain.document_loaders import Docx2txtLoader, PyPDFLoader, TextLoader, UnstructuredExcelLoader
 
 
 class DocumentLoaderSingletone:

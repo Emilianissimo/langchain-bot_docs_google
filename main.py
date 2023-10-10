@@ -1,25 +1,42 @@
 import sys
-import openai
-from typing import List
-from langchain.schema import Document
+
+from langchain.tools import Tool
+
+from constants import GREEN, WHITE
 from factories.llm_factory import LLMFactory
-from constants import YELLOW, GREEN, WHITE, RED
-from singletones.document_loader_singletone import DOCUMENTS
-from services.google_search_service import GoogleSearchiService
+from langchain.agents import initialize_agent, AgentType
+from helpers.tool_error_handler import tool_error_handler
 
 
 # Init all required components
 llm: LLMFactory = LLMFactory()
 
-# Init google service
-google_search_engine: GoogleSearchiService = GoogleSearchiService(engine=llm.google_search_engine)
 
-chat_history = []
+# Setup tools
+tools = [
+    Tool.from_function(
+        func=llm.chain.run,
+        name='Document-parser-and-conversation-tool',
+        description='useful to search data in the documents',
+    ),
+    Tool.from_function(
+        func=llm.google_search_engine.run,
+        name='Google-Custom-Search-Engine',
+        description="useful to search data in the google if the data is not in the documents",
+        handle_tool_error=tool_error_handler
+    ),
+]
 
-print(f"{YELLOW}---------------------------------------------------------------------------------")
-print('Welcome to the DocBot. You are now ready to start interacting with your documents. Ask bot about data included '
-      'or else.')
-print('---------------------------------------------------------------------------------')
+
+agent = initialize_agent(
+    tools,
+    llm.llm,
+    agent=AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION,
+    verbose=False,
+    memory=llm.memory,
+    handle_parsing_errors=True,
+)
+
 
 while True:
     query: str = input(f'{GREEN}Prompt (write exit to end or press F): ')
@@ -31,17 +48,6 @@ while True:
     if query == '':
         continue
 
-    internet_results: List[Document] = google_search_engine.search(query)
+    result = agent.run(query)
+    print(f"{WHITE}Answer: " + result)
 
-    try:
-        result: dict = llm.chain({
-            'question': query,
-            'chat_history': chat_history,
-            'documents': DOCUMENTS + internet_results
-        })
-        print(f"{WHITE}Answer: " + result["answer"])
-        chat_history.append((query, result['answer']))
-    except openai.error.InvalidRequestError:
-        print(f'{RED}Your context length is more than model able to handle. Please, delete DATA folder and rerun it')
-        print(f'{RED}Finishing')
-        sys.exit()
